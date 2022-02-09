@@ -1,14 +1,32 @@
 import tkinter as tk
 import picamera
 import datetime
+from subprocess import call
+from time import sleep
+import os
 
+image = 1
+video = 1
+session = str(datetime.datetime.now()).replace(" ","")
+session = session.replace("-","")
+session = session.replace(":","")
+session = session.replace(".","")
+os.mkdir("/home/pi/share/photos/" + session)
+os.mkdir("/home/pi/share/videos/" + session)
 
 #set up the camera to HD
 camera = picamera.PiCamera()
 camera.resolution = (1920,1080)
-#camera.iso = 600
+camera.framerate = 30
+camera.iso = 800
 
+#function to convert video to mp4
+def convert(file_h264, file_mp4):
+    command = "MP4Box -add " + file_h264 + ":fps=60 " + file_mp4
+    call([command], shell=True)
+    os.remove(file_h264)
 #functions for button commands
+
 def on():
     #allows for live preview of the microscope
     camera.start_preview(fullscreen=False, window=(20,80,1200,800))
@@ -17,16 +35,29 @@ def off():
     camera.stop_preview()
               
 def take_picture():
-    filename = "/home/pi/share/photos/" + str(datetime.datetime.now()) + ".jpg"
+    global image
+    global session
+    filename = "/home/pi/share/photos/" + session + "/" + str(image) + ".jpg"
+    image += 1
     camera.capture(filename)
     
 def start_video():
-    filename = "/home/pi/share/videos/" + str(datetime.datetime.now()) + ".h264"
+    global video
+    global session
+    filename = "/home/pi/share/videos/" + session + "/"+ str(video) + ".h264"
     camera.start_recording(filename)
     
 def stop_video():
     camera.stop_recording()
-
+    global video
+    global session
+    filename = "/home/pi/share/videos/" + session + "/" + str(video) + ".h264"
+    newfile = "/home/pi/share/videos/" + session + "/" + str(video) + ".mp4"
+    
+    video +=1
+    convert(filename,newfile)
+    
+    
 #gui build out
 window =tk.Tk()
 window.title('Raspberry Pi Microscope Recorder')
@@ -73,15 +104,13 @@ btn_stop_video = tk.Button(
     command = stop_video,
     )
 
-lbl_filename = tk.Label(window, text='Capture filename')
-e_filename = tk.Entry(window)
+
 
 btn_camera_on.pack()
 btn_camera_off.pack()
 btn_take_picture.pack()
 btn_start_video.pack()
 btn_stop_video.pack()
-lbl_filename.pack()
-e_filename.pack()
+
 
 window.mainloop()
