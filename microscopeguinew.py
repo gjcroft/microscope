@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter.tix import Tk
+##from tkinter.tix import Tk
 import picamera
 import datetime
 from subprocess import call
@@ -16,12 +16,14 @@ zoom = 1
 
 #set session folders in shared directory creates a new folder on run for the session
 #one folder created in photos and one in videos
-session = str(datetime.datetime.now()).replace(" ","")
-session = session.replace("-","")
-session = session.replace(":","")
-session = session.replace(".","")
-os.mkdir("/home/pi/share/photos/" + session)
-os.mkdir("/home/pi/share/videos/" + session)
+session = datetime.datetime.now()#str(datetime.datetime.now()).replace(" ","")
+session = session.strftime('%d-%m-%Y %H:%M:%S')
+##session = session.replace("-","")
+##session = session.replace(":","")
+##session = session.replace(".","")
+##print(session)
+os.makedirs(f"/home/pi/share/photos/{session}")
+os.makedirs(f"/home/pi/share/videos/{session}")
 
 camera = picamera.PiCamera()
 camera.framerate = 30
@@ -30,12 +32,18 @@ camera.framerate = 30
 
 #function to convert video to mp4
 def convert(file_h264, file_mp4):
+    print('converting')
     command = "MP4Box -add " + file_h264 + ":fps=60 " + file_mp4
     call([command], shell=True)
-    os.remove(file_h264)
+##    os.remove(file_h264)
 #functions for button commands
 
 def cam_on():
+    global camera
+    btn_camera_on.config(state='disabled')
+    btn_camera_off.config(state='normal')
+    btn_start_video.config(state='normal')
+    btn_take_picture.config(state='normal')
     #allows for live preview of the microscope
     #set up the camera to HD
     camera.resolution = (1920,1080)
@@ -43,6 +51,11 @@ def cam_on():
     
 
 def cam_off():
+    btn_camera_on.config(state='normal')
+    btn_camera_off.config(state='disabled')
+    btn_start_video.config(state='disabled')
+    btn_stop_video.config(state='disabled')
+
     #turn off preview
     camera.stop_preview()
               
@@ -59,10 +72,12 @@ def take_picture():
     camera.resolution = (1920,1080)
 
 def start_video():
+    btn_start_video.config(state='disabled')
+    btn_stop_video.config(state='normal')
     #set up the camera to HD for filming
-    camera.resolution = (1920,1080)
-    global video
-    global session
+##    camera.resolution = (1920,1080)
+##    global video
+##    global session
     filename = "/home/pi/share/videos/" + session + "/"+ str(video) + ".h264"
     camera.start_recording(filename)
     
@@ -70,6 +85,8 @@ def stop_video():
     camera.stop_recording()
     global video
     global session
+    btn_start_video.config(state='normal')
+    btn_stop_video.config(state='disabled')
     filename = "/home/pi/share/videos/" + session + "/" + str(video) + ".h264"
     newfile = "/home/pi/share/videos/" + session + "/" + str(video) + ".mp4"
     #increment filename
@@ -250,6 +267,7 @@ btn_take_picture = tk.Button(
     height = 1,
     bg='black',
     fg='white',
+    state='disabled',
     command = take_picture,
     )
 btn_start_video = tk.Button(
@@ -258,6 +276,7 @@ btn_start_video = tk.Button(
     height = 1,
     bg='green',
     fg='white',
+    state='disabled',
     command = start_video,
     )
 
@@ -267,6 +286,7 @@ btn_stop_video = tk.Button(
     height = 1,
     bg='red',
     fg='white',
+    state='disabled',
     command = stop_video,
     )
 
